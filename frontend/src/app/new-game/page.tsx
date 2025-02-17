@@ -1,5 +1,5 @@
 'use client';
-import { GameBoard } from '../../../components/GameBoard';
+import GameBoard  from '../../../components/GameBoard';
 import { motion } from 'framer-motion';
 
 export default function NewGame() {

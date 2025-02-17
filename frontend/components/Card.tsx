@@ -69,6 +69,7 @@ export const CardComponent = ({
         className="w-full h-full object-cover"
         width={200}
         height={200}
+        priority
       />
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-black/20 to-transparent" />
       <div className="absolute inset-0 border-4 border-purple-400 rounded-xl pointer-events-none" />
