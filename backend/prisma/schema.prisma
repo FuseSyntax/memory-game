@@ -21,3 +21,12 @@ model GameSession {
   moves      Int
   difficulty String
 }
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  username String  @unique
+  createdAt DateTime @default(now())
+}
+

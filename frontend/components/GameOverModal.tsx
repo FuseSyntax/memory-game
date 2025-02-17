@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export const GameOverModal = ({ 
   moves,
@@ -10,10 +11,15 @@ export const GameOverModal = ({
   time: number;
   onRestart: () => void;
 }) => {
+  const router = useRouter();
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleGoBack = () => {
+    router.push('/');
   };
 
   return (
@@ -53,6 +59,14 @@ export const GameOverModal = ({
             className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-xl transition-all duration-300"
           >
             🔄 Play Again
+          </motion.button>
+          <motion.button
+            onClick={handleGoBack}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(192, 132, 252, 0.5)" }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold text-xl transition-all duration-300"
+          >
+            🏠 Go Back Home
           </motion.button>
         </div>
       </motion.div>

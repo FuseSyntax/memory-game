@@ -1,5 +1,6 @@
 'use client';
-import { GameBoard } from '../../../components/GameBoard';
+import React, { Suspense } from 'react';
+import GameBoard from '../../../components/GameBoard';
 import { motion } from 'framer-motion';
 
 export default function NewGame() {
@@ -23,12 +24,14 @@ export default function NewGame() {
             transition={{
               duration: 2 + Math.random() * 3,
               repeat: Infinity,
-              ease: "linear"
+              ease: "linear",
             }}
           />
         ))}
       </div>
-      <GameBoard savedGame={null} />
+      <Suspense fallback={<div className="text-white text-center">Loading game...</div>}>
+        <GameBoard savedGame={null} />
+      </Suspense>
     </motion.div>
   );
 }

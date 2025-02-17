@@ -1,18 +1,19 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GameBoard } from '../../../../components/GameBoard';
+import GameBoard from '../../../../components/GameBoard';
 import { GameState } from '../../types';
 import { motion } from 'framer-motion';
 
-
-export default function GamePage({ params }: { params: { id: string } }) {
+export default function GamePage({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap the promise using React.use()
+  const { id } = use(params);
   const [savedGame, setSavedGame] = useState<GameState | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const savedGames = JSON.parse(localStorage.getItem('memoryGames') || '[]');
-    const game = savedGames.find((g: GameState) => g.id === params.id);
+    const game = savedGames.find((g: GameState) => g.id === id);
     
     if (game) {
       setSavedGame(game);
@@ -20,7 +21,7 @@ export default function GamePage({ params }: { params: { id: string } }) {
       alert('Game not found');
       router.push('/');
     }
-  }, [params.id, router]);
+  }, [id, router]);
 
   return (
     <motion.div
