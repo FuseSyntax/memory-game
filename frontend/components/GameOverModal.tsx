@@ -1,7 +1,6 @@
-// Enhanced GameOverModal.tsx
 'use client';
 import { motion } from 'framer-motion';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 
 export const GameOverModal = ({ 
   moves,
@@ -12,6 +11,8 @@ export const GameOverModal = ({
   time: number;
   onRestart: () => void;
 }) => {
+  const router = useRouter(); // ✅ Correct way to use routing in App Router
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -56,7 +57,7 @@ export const GameOverModal = ({
               onClick={onRestart}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full py-4 bg-gradient-to-r from-cyan-600/80 to-blue-600/80 rounded-xl font-bold text-xl text-white flex items-center justify-center gap-2 hover:shadow-cyan-500/20 hover:shadow-lg transition-all"
+              className="w-full py-4 bg-gradient-to-r from-cyan-600/80 z-10 to-blue-600/80 rounded-xl font-bold text-xl text-white flex items-center justify-center gap-2 hover:shadow-cyan-500/20 hover:shadow-lg transition-all"
             >
               <span className="text-2xl">🔄</span>
               RETRY MISSION
@@ -65,7 +66,7 @@ export const GameOverModal = ({
               onClick={() => router.push('/')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full py-4 bg-gradient-to-r from-purple-600/80 to-pink-600/80 rounded-xl font-bold text-xl text-white flex items-center justify-center gap-2 hover:shadow-purple-500/20 hover:shadow-lg transition-all"
+              className="w-full py-4 bg-gradient-to-r from-purple-600/80 to-pink-600/80 z-10 rounded-xl font-bold text-xl text-white flex items-center justify-center gap-2 hover:shadow-purple-500/20 hover:shadow-lg transition-all"
             >
               <span className="text-2xl">🏰</span>
               RETURN TO HQ

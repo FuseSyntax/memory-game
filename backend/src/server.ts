@@ -85,6 +85,31 @@ app.get('/api/profile', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+app.get('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload & { userId: string };
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const sessions = await prisma.gameSession.findMany({
+      where: { playerName: user.username },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ sessions });
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

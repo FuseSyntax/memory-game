@@ -88,10 +88,10 @@ export default function Home() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 className="px-6 py-3 bg-gray-800 border-2 cursor-pointer border-green-400/30 rounded-lg flex items-center gap-2 group"
-                onClick={() => router.push('/profile')}
+                onClick={() => router.push('/dashboard')}
               >
                 <span className="text-green-400">👾</span>
-                <span className="text-gray-300 group-hover:text-green-400 transition-colors">Profile</span>
+                <span className="text-gray-300 group-hover:text-green-400 transition-colors">Dashboard</span>
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
