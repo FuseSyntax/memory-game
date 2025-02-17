@@ -34,7 +34,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/circuit-board.svg')] opacity-10"></div>
+      <div className="absolute inset-0 bg-[url('/images/circuit-board.svg')] opacity-10"></div>
 
       <div className="container mx-auto px-4 py-16 text-center relative z-10 mt-[15vh]">
         <motion.h1
@@ -43,7 +43,7 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
         >
-          Memory Quest
+          NEON MATRIX
           <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 blur-2xl opacity-30"></div>
         </motion.h1>
 

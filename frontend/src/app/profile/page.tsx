@@ -54,9 +54,9 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/hexagon-pattern.svg')] opacity-5"></div>
+      <div className="absolute inset-0 bg-[url('/images/hexagon-pattern.svg')] opacity-5"></div>
       
-      <div className="container mx-auto px-4 py-16 text-center relative z-10">
+      <div className="container mx-auto px-4 py-16 text-center relative ">
         <motion.h1
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}

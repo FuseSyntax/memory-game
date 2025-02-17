@@ -33,7 +33,6 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
   const [paused, setPaused] = useState(false);
 
   // Modal states for pause, save, and restart confirmation
-  const [showPauseModal, setShowPauseModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
 
@@ -124,10 +123,9 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
     }
   };
 
-  // Instead of toggling paused state directly, show the pause modal.
-  const handlePause = () => {
-    setPaused(true);
-    setShowPauseModal(true);
+  // Use togglePause to flip the paused state
+  const togglePause = () => {
+    setPaused((prev) => !prev);
   };
 
   // Save game then show save modal.
@@ -159,57 +157,73 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/circuit-board.svg')] opacity-10" />
+      
+      <div className="max-w-6xl mx-auto p-8 relative z-10">
         {/* Game Header */}
         <div className="flex justify-between items-center mb-8">
           <motion.h1
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="text-4xl font-bold text-white drop-shadow-md"
+            className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
           >
-            Memory Game
+            NEON MATRIX
           </motion.h1>
-          <div className="text-white text-xl bg-white/10 px-4 py-2 rounded-lg">
-            Moves: {moves} | Time: {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+          <div className="flex items-center gap-4 bg-gray-800/50 px-6 py-3 rounded-xl border-2 border-cyan-400/20">
+            <div className="text-cyan-400">
+              <span className="font-bold text-xl">{moves}</span>
+              <span className="text-sm ml-1">MOVES</span>
+            </div>
+            <div className="h-8 w-px bg-cyan-400/30" />
+            <div className="text-purple-400">
+              <span className="font-bold text-xl">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}</span>
+              <span className="text-sm ml-1">TIME</span>
+            </div>
           </div>
         </div>
 
         {/* Control Buttons */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2">
-            <button
-              onClick={handlePause}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex gap-3">
+            <motion.button
+              onClick={togglePause}
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-cyan-400/30 rounded-xl text-cyan-400 flex items-center gap-2"
             >
-              Pause
-            </button>
-            <button
+              <span className="text-xl">{paused ? '▶️' : '⏸️'}</span>
+              {paused ? 'RESUME' : 'PAUSE'}
+            </motion.button>
+            <motion.button
               onClick={handleSaveGame}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-purple-400/30 rounded-xl text-purple-400 flex items-center gap-2"
             >
-              Save Game
-            </button>
+              <span className="text-xl">💾</span>
+              SAVE
+            </motion.button>
           </div>
-          <div className="flex gap-2">
-            {/* Instead of routing directly, show a confirmation modal */}
-            <button
+          <div className="flex gap-3">
+            <motion.button
               onClick={() => setShowRestartModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-blue-400/30 rounded-xl text-blue-400 flex items-center gap-2"
             >
-              New Game
-            </button>
-            <button
+              <span className="text-xl">🔄</span>
+              NEW GAME
+            </motion.button>
+            <motion.button
               onClick={handleCloseGame}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-red-400/30 rounded-xl text-red-400 flex items-center gap-2"
             >
-              Close Game
-            </button>
+              <span className="text-xl">🚪</span>
+              EXIT
+            </motion.button>
           </div>
         </div>
-
         {/* Game Cards Grid */}
-        <div className={`grid ${gridColsClass} gap-4 p-4`}>
+        <div className={`grid ${gridColsClass} gap-4 p-4 bg-gray-900/50 rounded-2xl border-2 border-cyan-400/10 backdrop-blur-sm`}>
           {cards.map(card => (
             <CardComponent
               key={card.id}
@@ -232,36 +246,6 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
           )}
         </AnimatePresence>
 
-        {/* Pause Modal */}
-        <AnimatePresence>
-          {showPauseModal && (
-            <AlertModal
-              isOpen={showPauseModal}
-              onClose={() => {
-                setShowPauseModal(false);
-                setPaused(false);
-              }}
-              title="Game Paused"
-              message="Do you want to resume or go back to home?"
-              actions={[
-                {
-                  text: 'Resume',
-                  action: () => {
-                    setShowPauseModal(false);
-                    setPaused(false);
-                  },
-                  style: 'bg-green-600 hover:bg-green-700',
-                },
-                {
-                  text: 'Go Home',
-                  action: () => router.push('/'),
-                  style: 'bg-red-600 hover:bg-red-700',
-                },
-              ]}
-            />
-          )}
-        </AnimatePresence>
-
         {/* Save Game Modal */}
         <AnimatePresence>
           {showSaveModal && (
@@ -274,12 +258,12 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
                 {
                   text: 'Go Home',
                   action: () => router.push('/'),
-                  style: 'bg-blue-600 hover:bg-blue-700',
+                  style: 'bg-blue-600 hover:bg-blue-700 z-10',
                 },
                 {
                   text: 'Close',
                   action: () => setShowSaveModal(false),
-                  style: 'bg-gray-600 hover:bg-gray-700',
+                  style: 'bg-gray-600 hover:bg-gray-700 z-10',
                 },
               ]}
             />
@@ -301,17 +285,31 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
                     restartGame();
                     setShowRestartModal(false);
                   },
-                  style: 'bg-green-600 hover:bg-green-700',
+                  style: 'bg-green-600 hover:bg-green-700 z-10',
                 },
                 {
                   text: 'Cancel',
                   action: () => setShowRestartModal(false),
-                  style: 'bg-gray-600 hover:bg-gray-700',
+                  style: 'bg-gray-600 hover:bg-gray-700 z-10',
                 },
               ]}
             />
           )}
         </AnimatePresence>
+
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-cyan-400 rounded-full"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animation: `float ${Math.random() * 10 + 5}s infinite`
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
