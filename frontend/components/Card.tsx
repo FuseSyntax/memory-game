@@ -11,12 +11,13 @@ export interface CardType {
 
 export interface GameState {
   id: string;
-  timestamp: number;
+  timestamp: string;
   cards: CardType[];
   moves: number;
   time: number;
   flipped: number[];
   gameOver: boolean;
+  difficulty: "easy" | "medium" | "hard"; 
 }
 
 export const CardComponent = ({ 

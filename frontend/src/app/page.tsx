@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import DifficultyModal from '../../components/DifficultyModal';
 import AuthModal from '../../components/AuthModal';
+import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -43,7 +44,9 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
         >
-          NEON MATRIX
+          <Link href={"/"}>
+            NEON MATRIX
+          </Link>
           <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 blur-2xl opacity-30"></div>
         </motion.h1>
 

@@ -2,10 +2,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertModal } from '../components/AlertModal';
-import { useRouter } from 'next/navigation';
 
 export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +35,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         localStorage.setItem('token', data.token);
         window.dispatchEvent(new Event('authChange'));
         onClose();
-        router.push('/profile');
+        // router.push('/profile');
       } else if (isSignUp) {
         // Optionally, you can handle sign up success here (e.g. redirect to login page)
         onClose();

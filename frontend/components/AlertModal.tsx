@@ -7,7 +7,6 @@ export const AlertModal = ({
   title,
   message,
   actions,
-  onClose,
 }: {
   isOpen: boolean;
   onClose: () => void;

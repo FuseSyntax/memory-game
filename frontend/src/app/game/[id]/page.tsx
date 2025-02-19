@@ -2,8 +2,9 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import GameBoard from '../../../../components/GameBoard';
-import { GameState } from '../../types';
+// import { GameState } from '../../types';
 import { motion } from 'framer-motion';
+import { GameState } from '../../../../components/Card';
 
 export default function GamePage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the promise using React.use()
@@ -13,10 +14,17 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     const savedGames = JSON.parse(localStorage.getItem('memoryGames') || '[]');
-    const game = savedGames.find((g: GameState) => g.id === id);
+    // Find the game by id (using any for safety if the structure is incomplete)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const game = savedGames.find((g: any) => g.id === id);
     
     if (game) {
-      setSavedGame(game);
+      // Provide a fallback for difficulty if it's missing
+      const completeGame: GameState = {
+        ...game,
+        difficulty: game.difficulty || 'easy',
+      };
+      setSavedGame(completeGame);
     } else {
       alert('Game not found');
       router.push('/');
