@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CardComponent, type CardType, type GameState } from '../components/Card';
 import { GameOverModal } from '../components/GameOverModal';
-import { AlertModal } from '../components/AlertModal'; // Ensure AlertModal is implemented
+import { AlertModal } from '../components/AlertModal';
+import Link from 'next/link';
 
 const cardValues = [
   '/images/image1.png',
@@ -33,13 +34,63 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
   const [paused, setPaused] = useState(false);
 
   // Modal states for pause, save, and restart confirmation
-  const [showPauseModal, setShowPauseModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
+
+  // New state to ensure auto-saving happens only once per session
+  const [autoSaved, setAutoSaved] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const difficulty = searchParams.get('difficulty') as 'easy' | 'medium' | 'hard' | null;
+
+  // --- Declare saveGameSession before it is used elsewhere ---
+  const saveGameSession = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        // Save to your backend API
+        const response = await fetch('http://localhost:3001/api/user/sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            timeTaken: time, // total game time (in seconds)
+            moves: moves,    // total moves
+            difficulty: difficulty || 'easy', // current difficulty
+            result: gameOver ? 'win' : 'incomplete', // based on game state
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to save game session');
+        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error('Error saving game session:', err.message);
+      }
+    }
+
+    // Save the game session locally (for /saved-game or history view)
+    const gameState: GameState = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      moves,
+      time,
+      difficulty: difficulty || 'easy',
+      cards: cards, // include any additional details if needed
+      flipped: flipped,
+      gameOver,
+    };
+
+    const existingGames = localStorage.getItem('memoryGames');
+    const memoryGames: GameState[] = existingGames ? JSON.parse(existingGames) : [];
+    memoryGames.push(gameState);
+    localStorage.setItem('memoryGames', JSON.stringify(memoryGames));
+  }, [time, moves, difficulty, gameOver, cards, flipped]);
+  // --- End saveGameSession declaration ---
 
   // Initialize game if no saved game and difficulty exists.
   useEffect(() => {
@@ -64,6 +115,14 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
       setGameOver(true);
     }
   }, [cards]);
+
+  // Auto-save game session when gameOver becomes true (only once)
+  useEffect(() => {
+    if (gameOver && !autoSaved) {
+      saveGameSession();
+      setAutoSaved(true);
+    }
+  }, [gameOver, autoSaved, saveGameSession]);
 
   // Adjust grid layout based on the total number of cards.
   const totalCards = cards.length;
@@ -97,11 +156,12 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
         isMatched: false,
       }));
     setCards(shuffled);
-    // Reset timer, moves, and other states.
+    // Reset timer, moves, gameOver, flipped and autoSaved.
     setTime(0);
     setMoves(0);
     setGameOver(false);
     setFlipped([]);
+    setAutoSaved(false);
   };
 
   const handleCardClick = (id: number) => {
@@ -124,34 +184,27 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
     }
   };
 
-  // Instead of toggling paused state directly, show the pause modal.
-  const handlePause = () => {
-    setPaused(true);
-    setShowPauseModal(true);
+  // Toggle pause state
+  const togglePause = () => {
+    setPaused(prev => !prev);
   };
 
-  // Save game then show save modal.
-  const handleSaveGame = () => {
-    const gameState: GameState = {
-      id: Date.now().toString(),
-      timestamp: Date.now(),
-      cards,
-      moves,
-      time,
-      flipped,
-      gameOver,
-    };
-    const existingGames = JSON.parse(localStorage.getItem('memoryGames') || '[]');
-    existingGames.push(gameState);
-    localStorage.setItem('memoryGames', JSON.stringify(existingGames));
+  // If user clicks SAVE manually, call the save function.
+  const handleSaveGame = async () => {
+    await saveGameSession();
     setShowSaveModal(true);
   };
 
-  const handleCloseGame = () => {
+  // Update game history on exit (save session if not already saved)
+  const handleCloseGame = async () => {
+    if (!autoSaved) {
+      await saveGameSession();
+      setAutoSaved(true);
+    }
     router.push('/');
   };
 
-  // Restart function: reinitialize the game using the current difficulty.
+  // Restart the game using the current difficulty.
   const restartGame = () => {
     if (difficulty) {
       initializeGame(difficulty);
@@ -159,57 +212,76 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/circuit-board.svg')] opacity-10" />
+
+      <div className="max-w-6xl mx-auto p-8 relative z-10">
         {/* Game Header */}
         <div className="flex justify-between items-center mb-8">
           <motion.h1
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="text-4xl font-bold text-white drop-shadow-md"
+            className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
           >
-            Memory Game
+            <Link href={"/"}>NEON MATRIX</Link>
           </motion.h1>
-          <div className="text-white text-xl bg-white/10 px-4 py-2 rounded-lg">
-            Moves: {moves} | Time: {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+          <div className="flex items-center gap-4 bg-gray-800/50 px-6 py-3 rounded-xl border-2 border-cyan-400/20">
+            <div className="text-cyan-400">
+              <span className="font-bold text-xl">{moves}</span>
+              <span className="text-sm ml-1">MOVES</span>
+            </div>
+            <div className="h-8 w-px bg-cyan-400/30" />
+            <div className="text-purple-400">
+              <span className="font-bold text-xl">
+                {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
+              </span>
+              <span className="text-sm ml-1">TIME</span>
+            </div>
           </div>
         </div>
 
         {/* Control Buttons */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2">
-            <button
-              onClick={handlePause}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex gap-3">
+            <motion.button
+              onClick={togglePause}
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-cyan-400/30 rounded-xl text-cyan-400 flex items-center gap-2"
             >
-              Pause
-            </button>
-            <button
+              <span className="text-xl">{paused ? '▶️' : '⏸️'}</span>
+              {paused ? 'RESUME' : 'PAUSE'}
+            </motion.button>
+            <motion.button
               onClick={handleSaveGame}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-purple-400/30 rounded-xl text-purple-400 flex items-center gap-2"
             >
-              Save Game
-            </button>
+              <span className="text-xl">💾</span>
+              SAVE
+            </motion.button>
           </div>
-          <div className="flex gap-2">
-            {/* Instead of routing directly, show a confirmation modal */}
-            <button
+          <div className="flex gap-3">
+            <motion.button
               onClick={() => setShowRestartModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-blue-400/30 rounded-xl text-blue-400 flex items-center gap-2"
             >
-              New Game
-            </button>
-            <button
+              <span className="text-xl">🔄</span>
+              NEW GAME
+            </motion.button>
+            <motion.button
               onClick={handleCloseGame}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              className="px-6 py-3 bg-gray-800/50 hover:bg-gray-700/50 border-2 border-red-400/30 rounded-xl text-red-400 flex items-center gap-2"
             >
-              Close Game
-            </button>
+              <span className="text-xl">🚪</span>
+              EXIT
+            </motion.button>
           </div>
         </div>
 
         {/* Game Cards Grid */}
-        <div className={`grid ${gridColsClass} gap-4 p-4`}>
+        <div className={`grid ${gridColsClass} gap-4 p-4 bg-gray-900/50 rounded-2xl border-2 border-cyan-400/10 backdrop-blur-sm`}>
           {cards.map(card => (
             <CardComponent
               key={card.id}
@@ -224,41 +296,7 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
         {/* Game Over Modal */}
         <AnimatePresence>
           {gameOver && (
-            <GameOverModal
-              moves={moves}
-              time={time}
-              onRestart={restartGame}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Pause Modal */}
-        <AnimatePresence>
-          {showPauseModal && (
-            <AlertModal
-              isOpen={showPauseModal}
-              onClose={() => {
-                setShowPauseModal(false);
-                setPaused(false);
-              }}
-              title="Game Paused"
-              message="Do you want to resume or go back to home?"
-              actions={[
-                {
-                  text: 'Resume',
-                  action: () => {
-                    setShowPauseModal(false);
-                    setPaused(false);
-                  },
-                  style: 'bg-green-600 hover:bg-green-700',
-                },
-                {
-                  text: 'Go Home',
-                  action: () => router.push('/'),
-                  style: 'bg-red-600 hover:bg-red-700',
-                },
-              ]}
-            />
+            <GameOverModal moves={moves} time={time} onRestart={restartGame} />
           )}
         </AnimatePresence>
 
@@ -274,12 +312,12 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
                 {
                   text: 'Go Home',
                   action: () => router.push('/'),
-                  style: 'bg-blue-600 hover:bg-blue-700',
+                  style: 'bg-blue-600 hover:bg-blue-700 z-10',
                 },
                 {
                   text: 'Close',
                   action: () => setShowSaveModal(false),
-                  style: 'bg-gray-600 hover:bg-gray-700',
+                  style: 'bg-gray-600 hover:bg-gray-700 z-10',
                 },
               ]}
             />
@@ -301,17 +339,31 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
                     restartGame();
                     setShowRestartModal(false);
                   },
-                  style: 'bg-green-600 hover:bg-green-700',
+                  style: 'bg-green-600 hover:bg-green-700 z-10',
                 },
                 {
                   text: 'Cancel',
                   action: () => setShowRestartModal(false),
-                  style: 'bg-gray-600 hover:bg-gray-700',
+                  style: 'bg-gray-600 hover:bg-gray-700 z-10',
                 },
               ]}
             />
           )}
         </AnimatePresence>
+
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-cyan-400 rounded-full"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animation: `float ${Math.random() * 10 + 5}s infinite`
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

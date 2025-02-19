@@ -108,12 +108,12 @@ export default function SavedGamesPage() {
             {
               text: 'Cancel',
               action: () => setShowDeleteConfirm(null),
-              style: 'bg-gray-500 hover:bg-gray-600',
+              style: 'bg-gray-500 hover:bg-gray-600 z-10',
             },
             {
               text: 'Delete',
               action: () => deleteGame(showDeleteConfirm!),
-              style: 'bg-red-600 hover:bg-red-700',
+              style: 'bg-red-600 hover:bg-red-700 z-10',
             },
           ]}
         />

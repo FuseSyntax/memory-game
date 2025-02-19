@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import DifficultyModal from '../../components/DifficultyModal';
 import AuthModal from '../../components/AuthModal';
+import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/circuit-board.svg')] opacity-10"></div>
+      <div className="absolute inset-0 bg-[url('/images/circuit-board.svg')] opacity-10"></div>
 
       <div className="container mx-auto px-4 py-16 text-center relative z-10 mt-[15vh]">
         <motion.h1
@@ -43,7 +44,9 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
         >
-          Memory Quest
+          <Link href={"/"}>
+            NEON MATRIX
+          </Link>
           <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 blur-2xl opacity-30"></div>
         </motion.h1>
 
@@ -88,10 +91,10 @@ export default function Home() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 className="px-6 py-3 bg-gray-800 border-2 cursor-pointer border-green-400/30 rounded-lg flex items-center gap-2 group"
-                onClick={() => router.push('/profile')}
+                onClick={() => router.push('/dashboard')}
               >
                 <span className="text-green-400">👾</span>
-                <span className="text-gray-300 group-hover:text-green-400 transition-colors">Profile</span>
+                <span className="text-gray-300 group-hover:text-green-400 transition-colors">Dashboard</span>
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}

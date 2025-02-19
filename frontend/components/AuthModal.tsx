@@ -2,10 +2,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertModal } from '../components/AlertModal';
-import { useRouter } from 'next/navigation';
 
 export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +35,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         localStorage.setItem('token', data.token);
         window.dispatchEvent(new Event('authChange'));
         onClose();
-        router.push('/profile');
+        // router.push('/profile');
       } else if (isSignUp) {
         // Optionally, you can handle sign up success here (e.g. redirect to login page)
         onClose();
@@ -56,71 +54,77 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl"
+            initial={{ scale: 0.8, y: -50 }}
+            animate={{ scale: 1, y: 0 }}
+            className="bg-gray-900/95 border-2 border-purple-400/30 rounded-xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
           >
-            <h3 className="text-xl font-bold mb-4">{isSignUp ? 'Sign Up' : 'Sign In'}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="absolute inset-0 bg-[url('/hexagon-pattern.svg')] opacity-10" />
+            <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              {isSignUp ? 'JOIN THE QUEST' : 'CONTINUE ADVENTURE'}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-5 z-10 relative">
               {isSignUp && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Username</label>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-400">Agent Name</label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="mt-1 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                    required
+                    className="w-full px-4 py-2.5 bg-gray-800/50 border border-purple-400/30 rounded-lg text-gray-200 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 transition-all"
+                    placeholder="Enter your codename"
                   />
                 </div>
               )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-400">Cybermail</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                  required
+                  className="w-full px-4 py-2.5 bg-gray-800/50 border border-purple-400/30 rounded-lg text-gray-200 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 transition-all"
+                  placeholder="user@neonnet.com"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-400">Cipher Code</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full text-black rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                  required
+                  className="w-full px-4 py-2.5 bg-gray-800/50 border border-purple-400/30 rounded-lg text-gray-200 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50 transition-all"
+                  placeholder="••••••••"
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsSignUp(!isSignUp)}
-                  className="px-4 py-2 text-sm text-purple-600 hover:text-purple-700"
+                  className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
                 >
-                  {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+                  {isSignUp ? 'Already initiated? ' : 'New agent? '}
+                  <span className="underline">{isSignUp ? 'Access Terminal' : 'Request Clearance'}</span>
                 </button>
-                <button
+                <motion.button
                   type="submit"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-medium text-white shadow-lg shadow-purple-500/20 transition-all"
                 >
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
-                </button>
+                  {isSignUp ? 'Activate Protocol' : 'Authenticate'}
+                </motion.button>
               </div>
             </form>
+            <AlertModal
+              isOpen={alertOpen}
+              onClose={() => setAlertOpen(false)}
+              title="System Alert"
+              message={error || 'Authentication sequence failed'}
+              actions={[{ text: 'Acknowledge', action: () => setAlertOpen(false) }]}
+            />
           </motion.div>
-          <AlertModal
-            isOpen={alertOpen}
-            onClose={() => setAlertOpen(false)}
-            title="Error"
-            message={error || 'Something went wrong'}
-            actions={[{ text: 'OK', action: () => setAlertOpen(false) }]}
-          />
         </motion.div>
       )}
     </AnimatePresence>
