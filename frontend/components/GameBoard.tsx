@@ -213,7 +213,7 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/circuit-board.svg')] opacity-10" />
+      <div className="absolute inset-0 opacity-10" />
 
       <div className="max-w-6xl mx-auto p-8 relative z-10">
         {/* Game Header */}

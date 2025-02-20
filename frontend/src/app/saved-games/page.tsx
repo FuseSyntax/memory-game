@@ -8,12 +8,16 @@ import { AlertModal } from '../../../components/AlertModal';
 export default function SavedGamesPage() {
   const [savedGames, setSavedGames] = useState<GameState[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false); // Fix for SSR
   const router = useRouter();
 
   useEffect(() => {
-    const saved = localStorage.getItem('memoryGames');
-    if (saved) {
-      setSavedGames(JSON.parse(saved));
+    setIsClient(true); // Set client flag after mount
+    if (typeof window !== 'undefined') { // Ensure it's running in the browser
+      const saved = localStorage.getItem('memoryGames');
+      if (saved) {
+        setSavedGames(JSON.parse(saved));
+      }
     }
   }, []);
 
@@ -24,8 +28,12 @@ export default function SavedGamesPage() {
     setShowDeleteConfirm(null);
   };
 
+  if (!isClient) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Loading...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 p-8 pt-20">
       <div className="max-w-4xl mx-auto max-h-screen">
         <div className="flex justify-between items-center mb-8">
           <motion.h1

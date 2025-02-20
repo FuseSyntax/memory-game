@@ -1,7 +1,10 @@
-'use client';
-import React, { Suspense } from 'react';
-import GameBoard from '../../../components/GameBoard';
-import { motion } from 'framer-motion';
+"use client";
+import React, { Suspense } from "react";
+import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
+
+// Lazy load GameBoard to avoid SSR issues
+const GameBoard = dynamic(() => import("../../../components/GameBoard"), { ssr: false });
 
 export default function NewGame() {
   return (
@@ -9,7 +12,7 @@ export default function NewGame() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900"
+      className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 pt-20"
     >
       <div className="particle-background">
         {[...Array(30)].map((_, i) => (

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertModal } from '../components/AlertModal';
+import { AlertModal } from './AlertModal';
 
 export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -13,8 +13,8 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const endpoint = isSignUp 
-      ? 'http://localhost:3001/api/signup' 
+    const endpoint = isSignUp
+      ? 'http://localhost:3001/api/signup'
       : 'http://localhost:3001/api/login';
     const body = isSignUp ? { email, password, username } : { email, password };
 
@@ -25,7 +25,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         body: JSON.stringify(body),
       });
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong');
       }
@@ -40,7 +40,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         // Optionally, you can handle sign up success here (e.g. redirect to login page)
         onClose();
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
       setAlertOpen(true);
@@ -54,14 +54,23 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed z-40 inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ scale: 0.8, y: -50 }}
             animate={{ scale: 1, y: 0 }}
             className="bg-gray-900/95 border-2 border-purple-400/30 rounded-xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute inset-0 bg-[url('/hexagon-pattern.svg')] opacity-10" />
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-purple-400 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 z-40 relative " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="absolute inset-0 opacity-10" />
             <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               {isSignUp ? 'JOIN THE QUEST' : 'CONTINUE ADVENTURE'}
             </h3>

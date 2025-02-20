@@ -26,7 +26,6 @@ const DifficultyModal: React.FC<DifficultyModalProps> = ({
     { level: 'hard', label: 'Master', cards: 30, color: 'from-red-400 to-rose-600' },
   ];
 
-  // Define the local handleSelect function which calls the prop
   const handleSelect = (difficulty: 'easy' | 'medium' | 'hard') => {
     onDifficultySelect(difficulty);
   };
@@ -39,12 +38,23 @@ const DifficultyModal: React.FC<DifficultyModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-10"
+          onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             className="bg-gray-900/95 border-2 border-cyan-400/30 rounded-xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-cyan-400 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
             <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent text-center">
               Select Challenge Tier
             </h3>
