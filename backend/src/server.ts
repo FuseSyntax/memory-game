@@ -95,7 +95,6 @@ app.get('/api/user/sessions', async (req: Request, res: Response): Promise<void>
   }
 });
 
-
 // POST Game Session Endpoint
 app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -110,7 +109,7 @@ app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    // Add result to the destructuring
+    // Destructure game session data from the request body
     const { timeTaken, moves, difficulty, result } = req.body;
     
     const newSession = await prisma.gameSession.create({
@@ -118,7 +117,7 @@ app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void
         timeTaken,
         moves,
         difficulty,
-        result, // Now properly referenced
+        result,
         user: {
           connect: { id: user.id },
         },
@@ -130,7 +129,6 @@ app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void
     res.status(500).json({ error: 'Something went wrong' });
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

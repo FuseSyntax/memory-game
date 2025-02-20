@@ -65,6 +65,30 @@
   }
 }
 
+.wallet-connect-modal {
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(64, 224, 208, 0.3);
+}
+
+@keyframes neon-pulse {
+  0% { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+  50% { text-shadow: 0 0 20px rgba(34, 211, 238, 0.8), 0 0 30px rgba(34, 211, 238, 0.6); }
+  100% { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* .neon-glow {
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+} */
+
+.neon-modal {
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+  background: linear-gradient(160deg, #0f172a 0%, #0d1117 100%) !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

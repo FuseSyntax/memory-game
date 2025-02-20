@@ -30,7 +30,7 @@ export const GameOverModal = ({
         animate={{ scale: 1, rotateX: 0 }}
         className="bg-gray-900/95 border-2 border-cyan-400/30 rounded-2xl p-8 max-w-md w-full relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-[url('/hexagon-pattern.svg')] opacity-10" />
+        <div className="absolute inset-0 opacity-10" />
         <div className="text-center space-y-6">
           <div className="relative">
             <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-8xl animate-pulse">

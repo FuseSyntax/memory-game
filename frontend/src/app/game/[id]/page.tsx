@@ -35,7 +35,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900"
+      className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 pt-20"
     >
       {savedGame ? (
         <GameBoard savedGame={savedGame} />
