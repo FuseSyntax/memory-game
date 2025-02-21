@@ -130,6 +130,8 @@ app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void
   }
 });
 
+
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
