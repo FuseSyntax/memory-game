@@ -1,15 +1,20 @@
-"use client"
+'use client';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { FaCoins, FaGamepad, FaUsers, FaDiscord, FaTwitter, FaRocket } from 'react-icons/fa';
 import { SiEthereum } from 'react-icons/si';
 import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 const Home = () => {
+  // Define your games and features arrays.
   const games = [
-    { id: 1, name: 'Cyber Arena', earnings: '0.5 ETH/day', image: '/images/cyber-arena.png', video: '/videos/cyber-arena.mp4' },
-    { id: 2, name: 'NFT Legends', earnings: '0.3 ETH/day', image: '/images/nft-legends.jpg', video: '/videos/nft-legends.mp4' },
-    { id: 3, name: 'Metaverse Battle', earnings: '0.7 ETH/day', image: '/images/metaverse-battle.jpg', video: '/videos/metaverse-battle.mp4' },
+    { id: 1, name: 'Cyber Arena', earnings: '0.5 ETH/day', image: '/images/cyber-arena.png', video: '/videos/cyberArena.mp4' },
+    { id: 2, name: 'NFT Legends', earnings: '0.3 ETH/day', image: '/images/nft-legends.jpg', video: '/videos/nftLegendVideo.mp4' },
+    { id: 3, name: 'Metaverse Battle', earnings: '0.7 ETH/day', image: '/images/metaverse-battle.jpg', video: '/videos/metaverseBattle.mp4' },
   ];
+
+    const router = useRouter();
+  
 
   const features = [
     { icon: <FaCoins />, title: "Play to Earn", description: "Turn your gaming skills into real cryptocurrency rewards" },
@@ -17,14 +22,18 @@ const Home = () => {
     { icon: <FaUsers />, title: "Community", description: "Join our competitive gaming ecosystem" },
   ];
 
+  // Parallax scroll for hero background
   const targetRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: targetRef,
-    offset: ["start start", "end start"]
+    offset: ["start start", "end start"],
   });
-
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.2]);
+
+  const handlePlayNow = () => {
+    router.push('/play-now');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-x-hidden">
@@ -49,7 +58,7 @@ const Home = () => {
               <span className="text-cyan-400 text-lg">Beta Live Now!</span>
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
               <span className="text-stroke">Next-Gen</span><br/>
               <motion.span 
                 className="inline-block"
@@ -99,18 +108,18 @@ const Home = () => {
               className="absolute w-1 h-1 bg-cyan-400 rounded-full"
               initial={{
                 x: Math.random() * 100,
-                y: Math.random() * 100
+                y: Math.random() * 100,
               }}
               animate={{
                 x: Math.random() * 100,
                 y: Math.random() * 100,
                 opacity: [0, 1, 0],
-                scale: [0, 1, 0]
+                scale: [0, 1, 0],
               }}
               transition={{
                 duration: 3 + Math.random() * 5,
                 repeat: Infinity,
-                repeatType: 'loop'
+                repeatType: 'loop',
               }}
             />
           ))}
@@ -144,7 +153,7 @@ const Home = () => {
                   loop
                   className="w-full h-96 object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                 >
-                  <source src={game.video} type="/video/video.mp4" />
+                  <source src={game.video} type="video/mp4" />
                 </video>
                 
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
@@ -241,6 +250,7 @@ const Home = () => {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
+              onClick={handlePlayNow}
               className="bg-cyan-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/30"
             >
               <FaGamepad className="text-xl" />
@@ -267,16 +277,10 @@ const Home = () => {
           <div className="space-y-4">
             <h4 className="text-white">Social Hub</h4>
             <div className="flex gap-4">
-              <motion.a
-                whileHover={{ y: -2 }}
-                className="text-2xl text-gray-400 hover:text-cyan-400"
-              >
+              <motion.a whileHover={{ y: -2 }} className="text-2xl text-gray-400 hover:text-cyan-400">
                 <FaDiscord />
               </motion.a>
-              <motion.a
-                whileHover={{ y: -2 }}
-                className="text-2xl text-gray-400 hover:text-cyan-400"
-              >
+              <motion.a whileHover={{ y: -2 }} className="text-2xl text-gray-400 hover:text-cyan-400">
                 <FaTwitter />
               </motion.a>
             </div>

@@ -6,12 +6,15 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ethers } from 'ethers';
 import { FaEthereum, FaGasPump } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface UserData {
   id: string;
   email: string;
   username: string;
   walletAddress?: string;
+  balance?: string; // deposit balance stored in DB (if available)
 }
 
 interface GameSession {
@@ -36,9 +39,19 @@ const Dashboard = () => {
   // Deposit/withdraw variables:
   const [ethAmount, setEthAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [walletBalance, setWalletBalance] = useState('0');
+  // userDeposit simulates the total funds added by the user via the dApp.
+  // On login, we set it from the backend user.balance (if available) and also persist it locally.
+  const [userDeposit, setUserDeposit] = useState('0');
   const [gasPrice, setGasPrice] = useState('0');
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [, setIsWalletConnected] = useState(false);
+
+  // On mount, load persisted deposit from localStorage as fallback
+  useEffect(() => {
+    const storedDeposit = localStorage.getItem('userDeposit');
+    if (storedDeposit) {
+      setUserDeposit(storedDeposit);
+    }
+  }, []);
 
   // Fetch profile and game sessions from backend API
   useEffect(() => {
@@ -58,7 +71,12 @@ const Dashboard = () => {
         }
         const profileData = await resProfile.json();
         setUser(profileData.user);
-
+        // If the backend provides a deposit balance, use it:
+        if (profileData.user.balance) {
+          const newBalance = profileData.user.balance.toString();
+          setUserDeposit(newBalance);
+          localStorage.setItem('userDeposit', newBalance);
+        }
         const resSessions = await fetch('http://localhost:3001/api/user/sessions', {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -69,6 +87,7 @@ const Dashboard = () => {
         const sessionsData = await resSessions.json();
         setSessions(sessionsData.sessions);
       } catch (err: any) {
+        toast.error(err.message);
         console.error('Error fetching data:', err.message);
       } finally {
         setLoading(false);
@@ -81,11 +100,15 @@ const Dashboard = () => {
     localStorage.removeItem('token');
     router.push('/');
   };
+
   const handlePlayNow = () => {
     router.push('/play-now');
   };
 
-  // Pagination
+
+
+  
+  // Pagination calculations
   const indexOfLastSession = currentPage * sessionsPerPage;
   const indexOfFirstSession = indexOfLastSession - sessionsPerPage;
   const currentSessions = sessions.slice(indexOfFirstSession, indexOfLastSession);
@@ -93,25 +116,43 @@ const Dashboard = () => {
   const handlePrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-  // Check wallet connection
+  // Check wallet connection using eth_accounts
+  const ensureWalletConnected = async () => {
+    const { ethereum } = window as any;
+    if (!ethereum) {
+      toast.error('Wallet not detected');
+      return false;
+    }
+    const accounts = await ethereum.request({ method: 'eth_accounts' });
+    if (!accounts || accounts.length === 0) {
+      toast.error('Please connect your wallet first!');
+      return false;
+    }
+    setIsWalletConnected(true);
+    return true;
+  };
+
+  // Listen for account changes to update connection state
   useEffect(() => {
-    const checkWalletConnection = async () => {
-      const { ethereum } = window as any;
-      if (ethereum && ethereum.selectedAddress) {
-        setIsWalletConnected(true);
-        try {
-          const provider = new ethers.BrowserProvider(ethereum);
-          const balance = await provider.getBalance(ethereum.selectedAddress);
-          setWalletBalance(ethers.formatEther(balance).slice(0, 6));
-        } catch (error) {
-          console.error('Wallet connection check error:', error);
+    const { ethereum } = window as any;
+    if (ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length === 0) {
+          setIsWalletConnected(false);
+        } else {
+          setIsWalletConnected(true);
         }
-      }
-    };
-    checkWalletConnection();
+      };
+      ethereum.on('accountsChanged', handleAccountsChanged);
+      return () => {
+        if (ethereum.removeListener) {
+          ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        }
+      };
+    }
   }, []);
 
-  // Fetch gas price using ethers v6 via Infura (or update URL with your Alchemy RPC if needed)
+  // Fetch gas price using ethers v6 via Infura
   useEffect(() => {
     const fetchGasPrice = async () => {
       try {
@@ -124,6 +165,7 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error('Gas price fetch error:', error);
+        toast.error("Failed to fetch gas price");
       }
     };
     fetchGasPrice();
@@ -133,20 +175,37 @@ const Dashboard = () => {
     const { ethereum } = window as any;
     const chainId = await ethereum.request({ method: 'eth_chainId' });
     if (chainId !== '0xaa36a7') {
-      alert('Please connect to Sepolia testnet!');
+      toast.error('Please connect to Sepolia testnet!');
       return false;
     }
     return true;
   };
 
-  // Deposit funds – send ETH to the contract (assuming the contract’s receive() or deposit() handles deposits)
-  const handleDeposit = async () => {
-    if (!isWalletConnected) {
-      alert('Please connect your wallet first!');
-      return;
+  // (OPTIONAL) Update backend balance by calling an API endpoint
+  const updateBackendBalance = async (newBalance: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await fetch('http://localhost:3001/api/user/balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ balance: newBalance }),
+      });
+    } catch (error) {
+      console.error('Backend balance update error:', error);
+      toast.error('Failed to update balance in database');
     }
+  };
+
+  // Deposit funds – send ETH to the contract and update deposit balance (persisted in localStorage & DB)
+  const handleDeposit = async () => {
+    if (!(await ensureWalletConnected())) return;
     if (!(await validateNetwork())) return;
     try {
+      toast.info('Depositing ETH...');
       const { ethereum } = window as any;
       const provider = new ethers.BrowserProvider(ethereum);
       const signer = await provider.getSigner();
@@ -155,40 +214,57 @@ const Dashboard = () => {
         value: ethers.parseEther(ethAmount),
       });
       await tx.wait();
-      alert('Deposit successful!');
+      toast.success('Deposit successful!');
+      // Update simulated deposit balance using native bigint arithmetic
+      const prevDeposit = ethers.parseEther(userDeposit);
+      const added = ethers.parseEther(ethAmount);
+      const newDeposit = prevDeposit + added;
+      const formattedDeposit = ethers.formatEther(newDeposit);
+      setUserDeposit(formattedDeposit);
+      localStorage.setItem('userDeposit', formattedDeposit);
+      await updateBackendBalance(formattedDeposit);
+      setEthAmount('');
     } catch (error) {
       console.error('Deposit error:', error);
-      alert('Deposit failed');
+      toast.error('Deposit failed');
     }
   };
 
-  // Update the handleWithdraw function
-const handleWithdraw = async () => {
-  if (!isWalletConnected) {
-    alert('Please connect your wallet first!');
-    return;
-  }
-  if (!(await validateNetwork())) return;
-  
-  try {
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-    if (!contractAddress) {
-      throw new Error('Contract address not configured');
+  // Withdraw funds – call the withdraw() function on the contract and update deposit balance (persisted in localStorage & DB)
+  const handleWithdraw = async () => {
+    if (!(await ensureWalletConnected())) return;
+    if (!(await validateNetwork())) return;
+    try {
+      const depositBN = ethers.parseEther(userDeposit);
+      const withdrawBN = ethers.parseEther(withdrawAmount);
+      if (withdrawBN > depositBN) {
+        toast.error('Insufficient deposited funds for withdrawal');
+        return;
+      }
+      toast.info('Processing withdrawal...');
+      const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+      if (!contractAddress) {
+        throw new Error('Contract address not configured');
+      }
+      const { ethereum } = window as any;
+      const provider = new ethers.BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
+      const abi = ["function withdraw(uint256 amount) external"];
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      const tx = await contract.withdraw(withdrawBN);
+      await tx.wait();
+      toast.success('Withdrawal successful!');
+      const newDeposit = depositBN - withdrawBN;
+      const formattedDeposit = ethers.formatEther(newDeposit);
+      setUserDeposit(formattedDeposit);
+      localStorage.setItem('userDeposit', formattedDeposit);
+      await updateBackendBalance(formattedDeposit);
+      setWithdrawAmount('');
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      toast.error(error instanceof Error ? error.message : 'Withdrawal failed');
     }
-
-    const { ethereum } = window as any;
-    const provider = new ethers.BrowserProvider(ethereum);
-    const signer = await provider.getSigner();
-    const abi = ["function withdraw(uint256 amount) external"];
-    const contract = new ethers.Contract(contractAddress, abi, signer);
-    const tx = await contract.withdraw(ethers.parseEther(withdrawAmount));
-    await tx.wait();
-    alert('Withdrawal successful!');
-  } catch (error) {
-    console.error('Withdrawal error:', error);
-    alert(error instanceof Error ? error.message : 'Withdrawal failed');
-  }
-};
+  };
 
   // Sidebar Navigation with 4 tabs
   const renderSidebar = () => (
@@ -269,7 +345,6 @@ const handleWithdraw = async () => {
     </div>
   );
 
-  // Render main content based on active tab
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'profile':
@@ -323,7 +398,6 @@ const handleWithdraw = async () => {
                         </span>
                       </div>
                       <div className="grid grid-cols-3 gap-4">
-                        {/* Result Section */}
                         <div className="flex items-center gap-2">
                           <span className="text-pink-400">🏆</span>
                           <div>
@@ -340,7 +414,6 @@ const handleWithdraw = async () => {
                             </p>
                           </div>
                         </div>
-                        {/* Moves Section */}
                         <div className="flex items-center gap-2">
                           <span className="text-purple-400">↺</span>
                           <div>
@@ -348,7 +421,6 @@ const handleWithdraw = async () => {
                             <p className="font-mono">{session.moves}</p>
                           </div>
                         </div>
-                        {/* Time Section */}
                         <div className="flex items-center gap-2">
                           <span className="text-cyan-400">⏱️</span>
                           <div>
@@ -363,7 +435,6 @@ const handleWithdraw = async () => {
                     </div>
                   ))}
                 </div>
-                {/* Pagination Controls */}
                 <div className="mt-6 flex justify-between items-center">
                   <button
                     onClick={handlePrevPage}
@@ -410,9 +481,9 @@ const handleWithdraw = async () => {
                     <FaEthereum />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Current Balance</h3>
+                    <h3 className="text-xl font-bold">Funds Added</h3>
                     <p className="text-2xl font-mono text-green-400">
-                      {walletBalance} ETH
+                      {userDeposit} ETH
                     </p>
                   </div>
                 </div>
@@ -453,9 +524,9 @@ const handleWithdraw = async () => {
                     <FaEthereum />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Available Balance</h3>
+                    <h3 className="text-xl font-bold">Available Funds</h3>
                     <p className="text-2xl font-mono text-red-400">
-                      {walletBalance} ETH
+                      {userDeposit} ETH
                     </p>
                   </div>
                 </div>
@@ -515,6 +586,7 @@ const handleWithdraw = async () => {
           {renderActiveTab()}
         </motion.div>
       </div>
+      <ToastContainer position="bottom-right" autoClose={5000} />
     </div>
   );
 };
