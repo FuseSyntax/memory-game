@@ -31,10 +31,6 @@ const Home = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.2]);
 
-  const handlePlayNow = () => {
-    router.push('/play-now');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-x-hidden">
       {/* Hero Section with Parallax */}
@@ -250,7 +246,7 @@ const Home = () => {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              onClick={handlePlayNow}
+            onClick={() => router.push('/play-now')}
               className="bg-cyan-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/30"
             >
               <FaGamepad className="text-xl" />
@@ -258,6 +254,7 @@ const Home = () => {
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
+              onClick={() => router.push('/marketplace')}
               className="bg-transparent border-2 border-cyan-500 text-cyan-400 px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-cyan-500/10"
             >
               <SiEthereum className="text-xl" />
