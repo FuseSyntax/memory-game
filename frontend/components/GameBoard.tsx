@@ -6,6 +6,7 @@ import { CardComponent, type CardType, type GameState } from '../components/Card
 import { GameOverModal } from '../components/GameOverModal';
 import { AlertModal } from '../components/AlertModal';
 import Link from 'next/link';
+import { SiMatrix } from 'react-icons/si';
 
 const cardValues = [
   '/images/image1.png',
@@ -67,7 +68,7 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to save game session');
         }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error('Error saving game session:', err.message);
       }
@@ -223,8 +224,10 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
             animate={{ y: 0, opacity: 1 }}
             className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent neon-glow"
           >
-            <Link href={"/"}>NEON MATRIX</Link>
-          </motion.h1>
+            <Link href={"/"} className='flex items-center gap-2'>
+              <SiMatrix className="text-purple-400 text-5xl" />
+              NEON MATRIX
+            </Link>          </motion.h1>
           <div className="flex items-center gap-4 bg-gray-800/50 px-6 py-3 rounded-xl border-2 border-cyan-400/20">
             <div className="text-cyan-400">
               <span className="font-bold text-xl">{moves}</span>

@@ -8,13 +8,14 @@ import { ethers } from 'ethers';
 import { FaEthereum, FaGasPump } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SiMatrix } from 'react-icons/si';
 
 interface UserData {
   id: string;
   email: string;
   username: string;
   walletAddress?: string;
-  balance?: string; // deposit balance stored in DB (if available)
+  balance?: string; // balance stored in the DB
 }
 
 interface GameSession {
@@ -39,19 +40,10 @@ const Dashboard = () => {
   // Deposit/withdraw variables:
   const [ethAmount, setEthAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  // userDeposit simulates the total funds added by the user via the dApp.
-  // On login, we set it from the backend user.balance (if available) and also persist it locally.
+  // userDeposit comes from the backend user's balance.
   const [userDeposit, setUserDeposit] = useState('0');
   const [gasPrice, setGasPrice] = useState('0');
   const [, setIsWalletConnected] = useState(false);
-
-  // On mount, load persisted deposit from localStorage as fallback
-  useEffect(() => {
-    const storedDeposit = localStorage.getItem('userDeposit');
-    if (storedDeposit) {
-      setUserDeposit(storedDeposit);
-    }
-  }, []);
 
   // Fetch profile and game sessions from backend API
   useEffect(() => {
@@ -71,12 +63,12 @@ const Dashboard = () => {
         }
         const profileData = await resProfile.json();
         setUser(profileData.user);
-        // If the backend provides a deposit balance, use it:
         if (profileData.user.balance) {
-          const newBalance = profileData.user.balance.toString();
+          const newBalance = parseFloat(profileData.user.balance).toFixed(8);
           setUserDeposit(newBalance);
           localStorage.setItem('userDeposit', newBalance);
         }
+
         const resSessions = await fetch('http://localhost:3001/api/user/sessions', {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -105,9 +97,6 @@ const Dashboard = () => {
     router.push('/play-now');
   };
 
-
-
-  
   // Pagination calculations
   const indexOfLastSession = currentPage * sessionsPerPage;
   const indexOfFirstSession = indexOfLastSession - sessionsPerPage;
@@ -181,7 +170,7 @@ const Dashboard = () => {
     return true;
   };
 
-  // (OPTIONAL) Update backend balance by calling an API endpoint
+  // Update backend balance using the absolute value
   const updateBackendBalance = async (newBalance: string) => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -200,7 +189,7 @@ const Dashboard = () => {
     }
   };
 
-  // Deposit funds – send ETH to the contract and update deposit balance (persisted in localStorage & DB)
+  // Deposit funds – send ETH to the contract and update deposit balance (both locally and in the DB)
   const handleDeposit = async () => {
     if (!(await ensureWalletConnected())) return;
     if (!(await validateNetwork())) return;
@@ -215,7 +204,7 @@ const Dashboard = () => {
       });
       await tx.wait();
       toast.success('Deposit successful!');
-      // Update simulated deposit balance using native bigint arithmetic
+      // Update deposit balance using ethers for arithmetic
       const prevDeposit = ethers.parseEther(userDeposit);
       const added = ethers.parseEther(ethAmount);
       const newDeposit = prevDeposit + added;
@@ -230,7 +219,7 @@ const Dashboard = () => {
     }
   };
 
-  // Withdraw funds – call the withdraw() function on the contract and update deposit balance (persisted in localStorage & DB)
+  // Withdraw funds – call the withdraw() function on the contract and update deposit balance
   const handleWithdraw = async () => {
     if (!(await ensureWalletConnected())) return;
     if (!(await validateNetwork())) return;
@@ -271,51 +260,50 @@ const Dashboard = () => {
     <div className="w-64 bg-gray-800/50 border-r border-cyan-400/20 p-4 flex flex-col">
       <div className="mb-8 px-2 py-4 border-b border-cyan-400/20">
         <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-          <Link href={"/"}>NEON MATRIX</Link>
+          <Link href={"/"} className='flex items-center gap-2'>
+            <SiMatrix className="text-purple-400 text-5xl" />
+            NEON MATRIX
+          </Link>
         </h2>
       </div>
       <div className="flex flex-col justify-between h-full">
         <nav className="space-y-2">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeTab === 'profile'
-                ? 'bg-cyan-600/20 border border-cyan-400/30'
-                : 'hover:bg-gray-700/30'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'profile'
+              ? 'bg-cyan-600/20 border border-cyan-400/30'
+              : 'hover:bg-gray-700/30'
+              }`}
           >
             <span className="text-cyan-400">👤</span>
             <span>Profile</span>
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeTab === 'history'
-                ? 'bg-purple-600/20 border border-purple-400/30'
-                : 'hover:bg-gray-700/30'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'history'
+              ? 'bg-purple-600/20 border border-purple-400/30'
+              : 'hover:bg-gray-700/30'
+              }`}
           >
             <span className="text-purple-400">📜</span>
             <span>Game History</span>
           </button>
           <button
             onClick={() => setActiveTab('addMoney')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeTab === 'addMoney'
-                ? 'bg-green-600/20 border border-green-400/30'
-                : 'hover:bg-gray-700/30'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'addMoney'
+              ? 'bg-green-600/20 border border-green-400/30'
+              : 'hover:bg-gray-700/30'
+              }`}
           >
             <span className="text-green-400">💵</span>
             <span>Add Funds</span>
           </button>
           <button
             onClick={() => setActiveTab('withdrawal')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeTab === 'withdrawal'
-                ? 'bg-red-600/20 border border-red-400/30'
-                : 'hover:bg-gray-700/30'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'withdrawal'
+              ? 'bg-red-600/20 border border-red-400/30'
+              : 'hover:bg-gray-700/30'
+              }`}
           >
             <span className="text-red-400">🏧</span>
             <span>Withdraw</span>
@@ -439,11 +427,10 @@ const Dashboard = () => {
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-lg ${
-                      currentPage === 1
-                        ? 'bg-gray-600 cursor-not-allowed'
-                        : 'bg-gray-700 hover:bg-gray-800'
-                    }`}
+                    className={`px-4 py-2 rounded-lg ${currentPage === 1
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-gray-700 hover:bg-gray-800'
+                      }`}
                   >
                     Previous
                   </button>
@@ -453,11 +440,10 @@ const Dashboard = () => {
                   <button
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-lg ${
-                      currentPage === totalPages
-                        ? 'bg-gray-600 cursor-not-allowed'
-                        : 'bg-gray-700 hover:bg-gray-800'
-                    }`}
+                    className={`px-4 py-2 rounded-lg ${currentPage === totalPages
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-gray-700 hover:bg-gray-800'
+                      }`}
                   >
                     Next
                   </button>
