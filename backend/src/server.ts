@@ -36,26 +36,29 @@
     }
   });
 
-  // Login Endpoint
-  app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { email, password } = req.body;
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (!user) {
-        res.status(400).json({ error: 'Invalid email or password' });
-        return;
-      }
-      const isValid = await bcrypt.compare(password, user.password);
-      if (!isValid) {
-        res.status(400).json({ error: 'Invalid email or password' });
-        return;
-      }
-      const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
-      res.json({ message: 'Login successful', token });
-    } catch (error) {
-      res.status(500).json({ error: 'Something went wrong' });
+// Login Endpoint
+app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      res.status(400).json({ error: 'Invalid email or password' });
+      return;
     }
-  });
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      res.status(400).json({ error: 'Invalid email or password' });
+      return;
+    }
+    const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
+    // Return the token along with the message
+    res.json({ message: 'Login successful', token });
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
+
 
   // Profile Endpoint (updated)
   app.get('/api/profile', async (req: Request, res: Response): Promise<void> => {
