@@ -2,8 +2,11 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { FaCoins, FaGamepad, FaUsers, FaDiscord, FaTwitter, FaRocket } from 'react-icons/fa';
 import { SiEthereum } from 'react-icons/si';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useWallet } from '../../components/WalletProvider';
+
+
 
 const Home = () => {
   // Define your games and features arrays.
@@ -13,14 +16,52 @@ const Home = () => {
     { id: 3, name: 'Metaverse Battle', earnings: '0.7 ETH/day', image: '/images/metaverse-battle.jpg', video: '/videos/metaverseBattle.mp4' },
   ];
 
-    const router = useRouter();
-  
-
   const features = [
     { icon: <FaCoins />, title: "Play to Earn", description: "Turn your gaming skills into real cryptocurrency rewards" },
     { icon: <SiEthereum />, title: "NFT Assets", description: "Own and trade unique in-game assets as NFTs" },
     { icon: <FaUsers />, title: "Community", description: "Join our competitive gaming ecosystem" },
   ];
+
+  const router = useRouter();
+
+  // Particle component with deterministic values
+  const Particle = ({ index }: { index: number }) => {
+
+    const [isMounted, setIsMounted] = useState(false);
+    
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+
+    const seed = index * 0.618033988749895; // Golden ratio conjugate
+    const initialX = seededRandom(seed) * 100;
+    const initialY = seededRandom(seed + 1) * 100;
+    const animateX = seededRandom(seed + 2) * 100;
+    const animateY = seededRandom(seed + 3) * 100;
+    const duration = 3 + seededRandom(seed + 4) * 5;
+    return (
+      <motion.div
+        className="absolute w-1 h-1 bg-cyan-400 rounded-full"
+        initial={{
+          x: initialX,
+          y: initialY,
+          opacity: 0,
+          scale: 0,
+        }}
+        animate={isMounted ? {
+          x: animateX,
+          y: animateY,
+          opacity: [0, 1, 0],
+          scale: [0, 1, 0],
+        } : {}}
+        transition={{
+          duration: duration,
+          repeat: Infinity,
+          repeatType: 'loop',
+        }}
+      />
+    );
+  };
 
   // Parallax scroll for hero background
   const targetRef = useRef<HTMLDivElement>(null);
@@ -31,11 +72,19 @@ const Home = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 1.2]);
 
+  const { walletConnected, setShowWalletModal } = useWallet();
+
+  // Seeded random function for consistent SSR/CSR values
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return Number((x - Math.floor(x)).toFixed(4));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-x-hidden">
       {/* Hero Section with Parallax */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <motion.div 
+        <motion.div
           style={{ opacity, scale }}
           className="absolute inset-0 bg-grid-white/[0.05]"
         >
@@ -53,10 +102,10 @@ const Home = () => {
             <div className="inline-block bg-cyan-500/10 px-6 py-3 rounded-full border border-cyan-400/30 mb-8">
               <span className="text-cyan-400 text-lg">Beta Live Now!</span>
             </div>
-            
+
             <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-              <span className="text-stroke">Next-Gen</span><br/>
-              <motion.span 
+              <span className="text-stroke">Next-Gen</span><br />
+              <motion.span
                 className="inline-block"
                 animate={{ textShadow: ["0 0 10px #00f2ff", "0 0 20px #00f2ff", "0 0 10px #00f2ff"] }}
                 transition={{ repeat: Infinity, duration: 2 }}
@@ -79,45 +128,33 @@ const Home = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/play-now')}
               className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-4 rounded-xl text-lg font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/30"
             >
               <FaRocket className="text-xl" />
               Launch Platform
             </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-transparent border-2 border-cyan-500 text-cyan-400 px-8 py-4 rounded-xl text-lg font-bold flex items-center gap-2 hover:bg-cyan-500/10"
-            >
-              <SiEthereum className="text-xl" />
-              Connect Wallet
-            </motion.button>
+
+            {!walletConnected && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowWalletModal(true)}
+                className="bg-transparent border-2 border-cyan-500 text-cyan-400 px-8 py-4 rounded-xl text-lg font-bold flex items-center gap-2 hover:bg-cyan-500/10"
+              >
+                <SiEthereum className="text-xl" />
+                Connect Wallet
+              </motion.button>
+            )}
+
           </motion.div>
         </div>
 
         {/* Animated Particles Background */}
         <div className="absolute inset-0 z-0">
           {[...Array(30)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-cyan-400 rounded-full"
-              initial={{
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-              }}
-              animate={{
-                x: Math.random() * 100,
-                y: Math.random() * 100,
-                opacity: [0, 1, 0],
-                scale: [0, 1, 0],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 5,
-                repeat: Infinity,
-                repeatType: 'loop',
-              }}
-            />
+            <Particle key={i} index={i} />
           ))}
         </div>
       </section>
@@ -125,17 +162,17 @@ const Home = () => {
       {/* Game Cards with Video Previews */}
       <section className="py-20 px-4 bg-gradient-to-b from-gray-900 to-gray-800">
         <div className="max-w-7xl mx-auto">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             className="text-4xl font-bold text-white mb-16 text-center"
           >
             Featured Games
           </motion.h2>
-          
+
           <div className="grid lg:grid-cols-3 gap-12">
             {games.map((game) => (
-              <motion.div 
+              <motion.div
                 key={game.id}
                 whileHover="hover"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -143,7 +180,7 @@ const Home = () => {
                 className="relative group overflow-hidden rounded-2xl border-2 border-cyan-500/20 bg-gray-900"
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
-                <video 
+                <video
                   autoPlay
                   muted
                   loop
@@ -151,7 +188,7 @@ const Home = () => {
                 >
                   <source src={game.video} type="video/mp4" />
                 </video>
-                
+
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
                   <h3 className="text-2xl font-bold text-white mb-2">{game.name}</h3>
                   <div className="flex items-center gap-2 text-cyan-400">
@@ -174,17 +211,17 @@ const Home = () => {
       {/* Interactive Features Grid */}
       <section className="py-20 px-4 bg-gray-900/50">
         <div className="max-w-7xl mx-auto">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             className="text-4xl font-bold text-white mb-16 text-center"
           >
             Game-Changing Features
           </motion.h2>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <motion.div 
+              <motion.div
                 key={index}
                 whileHover={{ scale: 1.05 }}
                 className="bg-gray-800/50 p-8 rounded-2xl border border-cyan-400/20 backdrop-blur-lg hover:border-cyan-400/40 transition-all"
@@ -213,13 +250,16 @@ const Home = () => {
             { value: 100, label: 'Tournaments', color: 'blue' },
             { value: 1000000, label: 'NFTs Traded', color: 'green' }
           ].map((stat, index) => (
-            <motion.div 
+            <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               className="p-6"
             >
-              <div className={`text-4xl font-bold text-${stat.color}-400 mb-2`}>
+              <div className={`text-4xl font-bold ${stat.color === 'cyan' ? 'text-cyan-400' :
+                stat.color === 'purple' ? 'text-purple-400' :
+                  stat.color === 'blue' ? 'text-blue-400' : 'text-green-400'
+                } mb-2`}>
                 ${stat.value.toLocaleString()}+
               </div>
               <div className="text-gray-300 uppercase text-sm tracking-wider">
@@ -231,7 +271,7 @@ const Home = () => {
       </section>
 
       {/* Floating CTA */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         className="py-20 px-4"
@@ -246,7 +286,7 @@ const Home = () => {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
-            onClick={() => router.push('/play-now')}
+              onClick={() => router.push('/play-now')}
               className="bg-cyan-500 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-cyan-500/30"
             >
               <FaGamepad className="text-xl" />

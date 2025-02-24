@@ -40,9 +40,13 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         // Optionally handle sign-up success here
         onClose();
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Login error:', err);
-      setError(err.message);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'An unknown error occurred'
+      );
       setAlertOpen(true);
     }
   };
