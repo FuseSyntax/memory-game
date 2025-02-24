@@ -1,146 +1,55 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { FaWallet, FaBars, FaTimes, FaEthereum } from 'react-icons/fa';
-import { ethers } from 'ethers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertModal } from '../components/AlertModal';
-import AuthModal from '../components/AuthModal'; // Import your Auth modal
-
-const NETWORK_CONFIG = {
-  chainId: '0xaa36a7',
-  chainName: 'Sepolia',
-  nativeCurrency: {
-    name: 'SepoliaETH',
-    symbol: 'ETH',
-    decimals: 18,
-  },
-  rpcUrls: ['https://rpc.sepolia.org'],
-  blockExplorerUrls: ['https://sepolia.etherscan.io'],
-};
+import AuthModal from '../components/AuthModal';
+import { useWallet } from './WalletProvider';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
-  const [walletBalance, setWalletBalance] = useState('');
-  const [networkName, setNetworkName] = useState('');
-  const [showWalletModal, setShowWalletModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false); // New state for AuthModal
-  const [loading, setLoading] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Derived state
-  const walletConnected = !!walletAddress;
+  // Get all wallet-related state and methods from context
+  const {
+    walletAddress,
+    walletBalance,
+    networkName,
+    walletConnected,
+    loading,
+    showWalletModal,
+    setShowWalletModal,
+    handleWalletConnection,
+    disconnectWallet,
+    detectWallets
+  } = useWallet();
 
   const toggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
   }, []);
 
-const detectWallets = useCallback(() => {
-  if (typeof window === 'undefined') return []; // Guard clause for SSR
-  const { ethereum, phantom } = window as any;
-  const providers = [
-    { name: 'MetaMask', check: ethereum?.isMetaMask },
-    { name: 'Coinbase', check: ethereum?.isCoinbaseWallet },
-    { name: 'Trust Wallet', check: ethereum?.isTrust },
-    { name: 'Phantom', check: ethereum?.isPhantom || !!phantom?.ethereum },
-    { name: 'Brave Wallet', check: ethereum?.isBraveWallet },
-    { name: 'Browser Wallet', check: !!ethereum && !ethereum.isMetaMask },
-    { name: 'Phantom (Solana)', check: !!phantom?.solana }
-  ];
-  const detected = providers.filter(p => p.check).map(p => p.name);
-  return [...new Set(detected)].filter(Boolean);
-}, []);
-
-
   const checkExistingWallet = useCallback(async () => {
-    const { ethereum } = window as any;
+    const { ethereum } = window;
     if (!ethereum) return;
 
     try {
-      const accounts = await ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        const provider = new ethers.BrowserProvider(ethereum);
-        const network = await provider.getNetwork();
-        const balance = await provider.getBalance(accounts[0]);
+      const accounts = await ethereum.request({ method: 'eth_accounts' }) as string[];
 
-        setWalletAddress(accounts[0]);
-        setNetworkName(network.name);
-        setWalletBalance(ethers.formatEther(balance).slice(0, 6));
+      if (accounts?.length > 0) {
+        // const provider = new ethers.BrowserProvider(ethereum);
+
+        // These state setters should come from your context if needed
+        // Consider moving this logic to your WalletProvider
       }
     } catch (error) {
       console.error('Wallet check error:', error);
     }
   }, []);
 
-  const handleNetworkSwitch = useCallback(async () => {
-    const { ethereum } = window as any;
-    try {
-      await ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: NETWORK_CONFIG.chainId }],
-      });
-    } catch (error: any) {
-      if (error.code === 4902) {
-        await ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            ...NETWORK_CONFIG,
-            iconUrls: ['https://your-logo-url.com/network-logo.png']
-          }],
-        });
-      }
-    }
-  }, []);
-
-  const handleWalletConnection = useCallback(
-    async (walletType: string) => {
-      setLoading(true);
-      try {
-        const { ethereum } = window as any;
-        if (!ethereum) throw new Error('Wallet not detected');
-
-        // First switch to the correct network
-        await handleNetworkSwitch();
-
-        // Then request accounts
-        const accounts = await ethereum.request({
-          method: 'eth_requestAccounts',
-          ...(walletType === 'Coinbase' && { params: [{ appName: 'Neon Matrix' }] }),
-        });
-
-        // Update wallet state
-        const provider = new ethers.BrowserProvider(ethereum);
-        const [network, balance] = await Promise.all([
-          provider.getNetwork(),
-          provider.getBalance(accounts[0]),
-        ]);
-
-        setWalletAddress(accounts[0]);
-        setNetworkName(network.name);
-        setWalletBalance(ethers.formatEther(balance).slice(0, 6));
-      } catch (error) {
-        console.error('Connection error:', error);
-        alert(error instanceof Error ? error.message : 'Connection failed');
-      } finally {
-        setLoading(false);
-        setShowWalletModal(false);
-      }
-    },
-    [handleNetworkSwitch]
-  );
-
-  const disconnectWallet = useCallback(() => {
-    setWalletAddress('');
-    setWalletBalance('');
-    setNetworkName('');
-  }, []);
-
   useEffect(() => {
     checkExistingWallet();
-
-    // Check authentication status based on the token in localStorage
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
 
@@ -149,55 +58,7 @@ const detectWallets = useCallback(() => {
     return () => window.removeEventListener('authChange', checkAuth);
   }, [checkExistingWallet]);
 
-  useEffect(() => {
-    const { ethereum } = window as any;
-    if (!ethereum) return;
 
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length > 0) {
-        checkExistingWallet();
-      } else {
-        disconnectWallet();
-      }
-    };
-
-    const handleChainChanged = () => checkExistingWallet();
-
-    ethereum.on('accountsChanged', handleAccountsChanged);
-    ethereum.on('chainChanged', handleChainChanged);
-
-    return () => {
-      ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      ethereum.removeListener('chainChanged', handleChainChanged);
-    };
-  }, [checkExistingWallet, disconnectWallet]);
-
-  const checkAuthStatus = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
-    try {
-      const response = await fetch('http://localhost:3001/api/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok && data.user) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
-    } catch (error) {
-      setIsLoggedIn(false);
-    }
-  };
-  
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
 
   return (
     <>
@@ -227,7 +88,7 @@ const detectWallets = useCallback(() => {
                     onClick={() => setMenuOpen(false)}
                     className="group relative px-3 py-2 hover:text-cyan-400 transition-colors"
                   >
-                    {path === '/' ? 'Home' : 
+                    {path === '/' ? 'Home' :
                       path.slice(1)
                         .replace(/-/g, ' ')
                         .replace(/\b\w/g, c => c.toUpperCase())}
@@ -249,11 +110,11 @@ const detectWallets = useCallback(() => {
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      setShowAuthModal(true); // Open Auth Modal when "Sign" is clicked
+                      setShowAuthModal(true);
                     }}
                     className="group relative px-3 py-2 hover:text-cyan-400 transition-colors"
                   >
-                    Sign
+                    Login
                     <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-cyan-400 group-hover:w-full transition-all duration-300"></span>
                   </button>
                 )}
@@ -275,7 +136,7 @@ const detectWallets = useCallback(() => {
                   </div>
                   <div className="flex items-center gap-1 bg-cyan-400/10 rounded-full px-3 py-2">
                     <span className="text-sm font-mono">
-                      {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                      {walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}
                     </span>
                     <button
                       onClick={disconnectWallet}
@@ -331,8 +192,7 @@ const detectWallets = useCallback(() => {
           )}
         </AnimatePresence>
       </nav>
-      
-      {/* Existing Wallet Modal */}
+
       <AlertModal
         isOpen={showWalletModal}
         onClose={() => setShowWalletModal(false)}
@@ -342,15 +202,14 @@ const detectWallets = useCallback(() => {
         actions={detectWallets().map((wallet) => ({
           text: wallet,
           action: () => handleWalletConnection(wallet),
-          style: `z-10 relative bg-gray-800 hover:bg-cyan-400/10 border border-cyan-400/20 ${
-            wallet.includes('MetaMask')
+          style: `z-10 relative bg-gray-800 hover:bg-cyan-400/10 border border-cyan-400/20 ${wallet.includes('MetaMask')
               ? 'text-orange-400'
               : wallet.includes('Coinbase')
-              ? 'text-blue-400'
-              : wallet.includes('Phantom')
-              ? 'text-purple-400'
-              : 'text-cyan-400'
-          }`
+                ? 'text-blue-400'
+                : wallet.includes('Phantom')
+                  ? 'text-purple-400'
+                  : 'text-cyan-400'
+            }`
         }))}
         customStyles={{
           content: {
@@ -361,11 +220,10 @@ const detectWallets = useCallback(() => {
         }}
       />
 
-      {/* Auth Modal for signing in */}
       <AnimatePresence>
         {showAuthModal && (
-          <AuthModal 
-            isOpen={showAuthModal} 
+          <AuthModal
+            isOpen={showAuthModal}
             onClose={() => setShowAuthModal(false)}
           />
         )}
