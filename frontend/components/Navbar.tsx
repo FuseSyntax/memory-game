@@ -37,20 +37,22 @@ const Navbar = () => {
     setMenuOpen((prev) => !prev);
   }, []);
 
-  const detectWallets = useCallback(() => {
-    const { ethereum, phantom } = window as any;
-    const providers = [
-      { name: 'MetaMask', check: ethereum?.isMetaMask },
-      { name: 'Coinbase', check: ethereum?.isCoinbaseWallet },
-      { name: 'Trust Wallet', check: ethereum?.isTrust },
-      { name: 'Phantom', check: ethereum?.isPhantom || !!phantom?.ethereum },
-      { name: 'Brave Wallet', check: ethereum?.isBraveWallet },
-      { name: 'Browser Wallet', check: !!ethereum && !ethereum.isMetaMask },
-      { name: 'Phantom (Solana)', check: !!phantom?.solana }
-    ];
-    const detected = providers.filter(p => p.check).map(p => p.name);
-    return [...new Set(detected)].filter(Boolean);
-  }, []);
+const detectWallets = useCallback(() => {
+  if (typeof window === 'undefined') return []; // Guard clause for SSR
+  const { ethereum, phantom } = window as any;
+  const providers = [
+    { name: 'MetaMask', check: ethereum?.isMetaMask },
+    { name: 'Coinbase', check: ethereum?.isCoinbaseWallet },
+    { name: 'Trust Wallet', check: ethereum?.isTrust },
+    { name: 'Phantom', check: ethereum?.isPhantom || !!phantom?.ethereum },
+    { name: 'Brave Wallet', check: ethereum?.isBraveWallet },
+    { name: 'Browser Wallet', check: !!ethereum && !ethereum.isMetaMask },
+    { name: 'Phantom (Solana)', check: !!phantom?.solana }
+  ];
+  const detected = providers.filter(p => p.check).map(p => p.name);
+  return [...new Set(detected)].filter(Boolean);
+}, []);
+
 
   const checkExistingWallet = useCallback(async () => {
     const { ethereum } = window as any;
@@ -169,6 +171,33 @@ const Navbar = () => {
       ethereum.removeListener('chainChanged', handleChainChanged);
     };
   }, [checkExistingWallet, disconnectWallet]);
+
+  const checkAuthStatus = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:3001/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.user) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      setIsLoggedIn(false);
+    }
+  };
+  
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   return (
     <>

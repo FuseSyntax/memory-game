@@ -17,7 +17,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
       ? 'http://localhost:3001/api/signup'
       : 'http://localhost:3001/api/login';
     const body = isSignUp ? { email, password, username } : { email, password };
-
+  
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -25,28 +25,30 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
         body: JSON.stringify(body),
       });
       const data = await response.json();
-
+      console.log('Login response:', data); // Debug log
+  
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong');
       }
-
-      // When login is successful, save token and redirect to profile page
+  
+      // For login, use the returned token
       if (data.token) {
         localStorage.setItem('token', data.token);
         window.dispatchEvent(new Event('authChange'));
         onClose();
-        // router.push('/profile');
       } else if (isSignUp) {
-        // Optionally, you can handle sign up success here (e.g. redirect to login page)
+        // Optionally handle sign-up success here
         onClose();
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message);
       setAlertOpen(true);
     }
   };
-
+  
+  
+  
   return (
     <AnimatePresence>
       {isOpen && (

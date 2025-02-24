@@ -132,7 +132,7 @@ export default function PlayNow() {
 
         {/* Animated Circuit Pattern */}
         <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
-          <div className="absolute inset-0 bg-[url('/images/circuit-pattern.svg')] bg-repeat animate-pan" />
+          <div className="absolute inset-0 bg-repeat animate-pan" />
         </div>
       </div>
     </div>
