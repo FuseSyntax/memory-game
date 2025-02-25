@@ -90,8 +90,10 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    window.dispatchEvent(new Event('authChange')); // Notify Navbar
     router.push('/');
   };
+  
 
   const handlePlayNow = () => {
     router.push('/play-now');
