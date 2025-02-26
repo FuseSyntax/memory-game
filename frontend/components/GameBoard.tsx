@@ -51,7 +51,7 @@ export default function GameBoard({ savedGame }: { savedGame?: GameState | null 
     if (token) {
       try {
         // Save to your backend API
-        const response = await fetch('http://localhost:3001/api/user/sessions', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/sessions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

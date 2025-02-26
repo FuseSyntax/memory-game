@@ -14,8 +14,8 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean; onClos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const endpoint = isSignUp
-      ? 'http://localhost:3001/api/signup'
-      : 'http://localhost:3001/api/login';
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/signup`
+      : `${process.env.NEXT_PUBLIC_API_URL}/api/login`;
     const body = isSignUp ? { email, password, username } : { email, password };
   
     try {

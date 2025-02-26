@@ -9,11 +9,17 @@ const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const decimal_js_1 = require("decimal.js");
 dotenv_1.default.config();
 const prisma = new client_1.PrismaClient();
 const app = (0, express_1.default)();
 const port = 3001;
-app.use((0, cors_1.default)());
+const corsOptions = {
+    origin: process.env.NEXT_FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 const SECRET_KEY = process.env.JWT_SECRET || 'your_secret_key';
 // Signup Endpoint
@@ -50,13 +56,14 @@ app.post('/api/login', async (req, res) => {
             return;
         }
         const token = jsonwebtoken_1.default.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
+        // Return the token along with the message
         res.json({ message: 'Login successful', token });
     }
     catch (error) {
         res.status(500).json({ error: 'Something went wrong' });
     }
 });
-// Profile Endpoint
+// Profile Endpoint (updated)
 app.get('/api/profile', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -65,37 +72,44 @@ app.get('/api/profile', async (req, res) => {
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(token, SECRET_KEY);
-        const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { id: true, email: true, username: true, balance: true, createdAt: true },
+        });
         if (!user) {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-        res.json({ user });
+        res.json({
+            user: {
+                ...user,
+                balance: user.balance.toFixed(8), // Format to 8 decimal places (e.g., "0.00000001")
+            }
+        });
     }
     catch (error) {
         res.status(401).json({ error: 'Invalid token' });
     }
 });
 // GET Game Sessions Endpoint
-app.get('/api/user/sessions', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
-    }
-    try {
-        const decoded = jsonwebtoken_1.default.verify(token, SECRET_KEY);
-        const sessions = await prisma.gameSession.findMany({
-            where: { userId: decoded.userId },
-            orderBy: { createdAt: 'desc' },
-        });
-        res.json({ sessions });
-    }
-    catch (error) {
-        res.status(401).json({ error: 'Invalid token' });
-    }
-});
-// POST Game Session Endpoint
+// app.get('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
+//   const token = req.headers.authorization?.split(' ')[1];
+//   if (!token) {
+//     res.status(401).json({ error: 'Unauthorized' });
+//     return;
+//   }
+//   try {
+//     const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload & { userId: string };
+//     const sessions = await prisma.gameSession.findMany({
+//       where: { userId: decoded.userId },
+//       orderBy: { createdAt: 'desc' },
+//     });
+//     res.json({ sessions });
+//   } catch (error) {
+//     res.status(401).json({ error: 'Invalid token' });
+//   }
+// });
+// POST Game Session Endpoint (updated with Decimal arithmetic)
 app.post('/api/user/sessions', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -109,20 +123,60 @@ app.post('/api/user/sessions', async (req, res) => {
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
-        // Add result to the destructuring
         const { timeTaken, moves, difficulty, result } = req.body;
         const newSession = await prisma.gameSession.create({
             data: {
                 timeTaken,
                 moves,
                 difficulty,
-                result, // Now properly referenced
-                user: {
-                    connect: { id: user.id },
-                },
+                result,
+                user: { connect: { id: user.id } },
             },
         });
-        res.status(201).json({ message: 'Game session saved successfully', session: newSession });
+        // Reward/Penalty system
+        let reward = new decimal_js_1.Decimal(0);
+        if (result === 'win') {
+            reward = new decimal_js_1.Decimal(10);
+        }
+        else if (result === 'lose') {
+            reward = new decimal_js_1.Decimal(-5);
+        }
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { balance: new decimal_js_1.Decimal(user.balance).add(reward) },
+        });
+        res.status(201).json({
+            message: 'Game session saved successfully',
+            session: newSession,
+            balance: updatedUser.balance.toString(),
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Something went wrong' });
+    }
+});
+// Update Balance Endpoint – using Decimal arithmetic
+app.post('/api/user/balance', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+    try {
+        const decoded = jsonwebtoken_1.default.verify(token, SECRET_KEY);
+        const { balance } = req.body;
+        if (balance === undefined || isNaN(Number(balance))) {
+            res.status(400).json({ error: 'Invalid balance' });
+            return;
+        }
+        // Convert the balance to a Decimal
+        const newBalance = new decimal_js_1.Decimal(balance);
+        const updatedUser = await prisma.user.update({
+            where: { id: decoded.userId },
+            data: { balance: newBalance },
+        });
+        res.json({ message: 'Balance updated successfully', balance: updatedUser.balance.toString() });
     }
     catch (error) {
         console.error(error);
@@ -132,3 +186,4 @@ app.post('/api/user/sessions', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
+exports.default = app;

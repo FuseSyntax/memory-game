@@ -1,17 +1,12 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
   "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/server.js",
     "dev": "ts-node src/server.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@prisma/client": "^6.3.1",
     "bcryptjs": "^3.0.0",
