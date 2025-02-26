@@ -195,3 +195,5 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
   app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });
+
+  export default app;
