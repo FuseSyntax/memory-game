@@ -54,7 +54,7 @@ const Dashboard = () => {
     }
     const fetchData = async () => {
       try {
-        const resProfile = await fetch('http://localhost:3001/api/profile', {
+        const resProfile = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!resProfile.ok) {
@@ -69,7 +69,7 @@ const Dashboard = () => {
           localStorage.setItem('userDeposit', newBalance);
         }
 
-        const resSessions = await fetch('http://localhost:3001/api/user/sessions', {
+        const resSessions = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/sessions`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!resSessions.ok) {
@@ -177,7 +177,7 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await fetch('http://localhost:3001/api/user/balance', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/balance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

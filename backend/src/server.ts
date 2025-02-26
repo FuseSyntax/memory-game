@@ -12,7 +12,13 @@
   const app: Application = express();
   const port = 3001;
 
-  app.use(cors());
+  const corsOptions = {
+    origin: process.env.NEXT_FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  };
+
+  app.use(cors(corsOptions));
   app.use(express.json());
 
   const SECRET_KEY = process.env.JWT_SECRET || 'your_secret_key';
@@ -90,23 +96,24 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
 
 
   // GET Game Sessions Endpoint
-  app.get('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-    try {
-      const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload & { userId: string };
-      const sessions = await prisma.gameSession.findMany({
-        where: { userId: decoded.userId },
-        orderBy: { createdAt: 'desc' },
-      });
-      res.json({ sessions });
-    } catch (error) {
-      res.status(401).json({ error: 'Invalid token' });
-    }
-  });
+  // app.get('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
+  //   const token = req.headers.authorization?.split(' ')[1];
+  //   if (!token) {
+  //     res.status(401).json({ error: 'Unauthorized' });
+  //     return;
+  //   }
+  //   try {
+  //     const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload & { userId: string };
+  //     const sessions = await prisma.gameSession.findMany({
+  //       where: { userId: decoded.userId },
+  //       orderBy: { createdAt: 'desc' },
+  //     });
+  //     res.json({ sessions });
+  //   } catch (error) {
+  //     res.status(401).json({ error: 'Invalid token' });
+  //   }
+  // });
+  
 
   // POST Game Session Endpoint (updated with Decimal arithmetic)
   app.post('/api/user/sessions', async (req: Request, res: Response): Promise<void> => {
@@ -156,8 +163,6 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
     }
   });
 
-
-  // Update Balance Endpoint – updates the balance to an absolute value
 
   // Update Balance Endpoint – using Decimal arithmetic
   app.post('/api/user/balance', async (req: Request, res: Response): Promise<void> => {
